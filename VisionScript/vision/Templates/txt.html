@@ -1,0 +1,295 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="transition-colors duration-300">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionScript - Extracted Text</title>
+    <!-- Tailwind v4 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Outfit Font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style type="text/tailwindcss">
+        @custom-variant dark (&:where(.dark, .dark *));
+    </style>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+    <!-- Top glassmorphic Navbar -->
+    <nav class="sticky top-0 z-40 w-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-gradient-to-tr from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/30">
+                        <i data-lucide="scan-line" class="w-6 h-6 text-white animate-pulse"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xl font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">VisionScript</span>
+                        <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 tracking-wider uppercase">OCR Workspace</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl text-sm font-semibold transition-all">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                        <span>Back Home</span>
+                    </a>
+                    
+                    <div class="h-4 w-px bg-slate-200 dark:bg-slate-800"></div>
+
+                    <!-- Theme Toggle -->
+                    <button id="themeToggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all active:scale-95">
+                        <i id="themeIconSun" data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                        <i id="themeIconMoon" data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Panel -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col justify-center">
+        
+        <div class="bg-white dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-xl p-6 sm:p-8 flex flex-col space-y-6">
+            
+            <!-- Workspace Header with counters -->
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-4">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-5 h-5 text-indigo-500"></i>
+                    Extracted Text Result
+                </h2>
+                
+                <div class="flex items-center space-x-3 text-xs font-semibold text-slate-400 dark:text-slate-500">
+                    <span>Words: <strong id="wordCount" class="text-slate-700 dark:text-slate-300">0</strong></span>
+                    <span class="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full"></span>
+                    <span>Chars: <strong id="charCount" class="text-slate-700 dark:text-slate-300">0</strong></span>
+                </div>
+            </div>
+
+            <!-- Workspace Textarea Editor -->
+            <textarea id="extractedText" placeholder="No text extracted yet." class="w-full min-h-[300px] p-4 bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/80 resize-y font-sans text-sm sm:text-base leading-relaxed transition-all">{{ extracted_text }}</textarea>
+
+            <!-- Workspace Action Toolbar -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800/60">
+                <div class="flex flex-wrap gap-2">
+                    <!-- Copy Button -->
+                    <button id="copyBtn" class="relative group px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-2 active:scale-95 transition-all" title="Copy text">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        <span>Copy</span>
+                        
+                        <!-- Clipboard tooltip -->
+                        <span id="copyTooltip" class="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-slate-900 text-white rounded text-[10px] font-bold opacity-0 transition-opacity duration-300 pointer-events-none whitespace-nowrap shadow-md">Copied!</span>
+                    </button>
+
+                    <!-- Download Button -->
+                    <button id="downloadBtn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-2 active:scale-95 transition-all" title="Download as text file">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Download</span>
+                    </button>
+
+                    <!-- Speak Button -->
+                    <button id="speakBtn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-2 active:scale-95 transition-all" title="Speak text aloud">
+                        <i id="speakIcon" data-lucide="volume-2" class="w-4 h-4"></i>
+                        <span id="speakText">Listen</span>
+                    </button>
+                </div>
+
+                <a href="/" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                    <span>Convert Another</span>
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Global Toast message notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border backdrop-blur">
+        <i id="toastIcon" data-lucide="info" class="w-5 h-5"></i>
+        <span id="toastMessage" class="text-sm font-semibold"></span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="py-8 bg-white dark:bg-slate-950 border-t border-slate-200/50 dark:border-slate-800/40 text-center transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 text-xs sm:text-sm text-slate-400 dark:text-slate-500 space-y-2">
+            <p class="font-bold flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-400">
+                <i data-lucide="shield-check" class="w-4 h-4 text-indigo-500"></i>
+                VisionScript OCR System
+            </p>
+            <p>© 2026 VisionScript. Core OCR is driven by Tesseract.</p>
+        </div>
+    </footer>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+
+    <!-- Scripting for Text Results -->
+    <script>
+        // DOM Elements
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const extractedTextTextarea = document.getElementById('extractedText');
+        const wordCountSpan = document.getElementById('wordCount');
+        const charCountSpan = document.getElementById('charCount');
+        
+        const copyBtn = document.getElementById('copyBtn');
+        const copyTooltip = document.getElementById('copyTooltip');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const speakBtn = document.getElementById('speakBtn');
+        const speakIcon = document.getElementById('speakIcon');
+        const speakText = document.getElementById('speakText');
+        
+        const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastMessage = document.getElementById('toastMessage');
+
+        // Speech Synth active reference
+        let synth = window.speechSynthesis;
+        let utteranceRef = null;
+
+        // Theme Toggle Handler
+        themeToggleBtn.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        });
+
+        // Toast utility
+        function showToast(message, type = 'success') {
+            toastMessage.textContent = message;
+            
+            toast.className = 'fixed bottom-5 right-5 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border backdrop-blur ';
+            
+            if (type === 'success') {
+                toast.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-600', 'dark:text-emerald-400');
+                toastIcon.setAttribute('data-lucide', 'check-circle');
+            } else {
+                toast.classList.add('bg-rose-500/10', 'border-rose-500/30', 'text-rose-600', 'dark:text-rose-400');
+                toastIcon.setAttribute('data-lucide', 'alert-triangle');
+            }
+            
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // Live stats counters updates
+        function updateTextStats() {
+            const text = extractedTextTextarea.value.trim();
+            const charCount = text.length;
+            const wordCount = text === '' ? 0 : text.split(/\s+/).length;
+            
+            charCountSpan.textContent = charCount;
+            wordCountSpan.textContent = wordCount;
+        }
+
+        extractedTextTextarea.addEventListener('input', updateTextStats);
+
+        // Run counters initially
+        updateTextStats();
+
+        // Copy button action
+        copyBtn.addEventListener('click', () => {
+            const text = extractedTextTextarea.value;
+            if (!text) return;
+
+            navigator.clipboard.writeText(text).then(() => {
+                copyTooltip.classList.remove('opacity-0');
+                copyTooltip.classList.add('opacity-100');
+                
+                setTimeout(() => {
+                    copyTooltip.classList.remove('opacity-100');
+                    copyTooltip.classList.add('opacity-0');
+                }, 1500);
+
+                showToast('Copied text to clipboard!');
+            }).catch(err => {
+                showToast('Failed to copy text: ' + err, 'error');
+            });
+        });
+
+        // Download action
+        downloadBtn.addEventListener('click', () => {
+            const text = extractedTextTextarea.value;
+            if (!text) return;
+
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `extracted-ocr-${Date.now()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Document downloaded successfully!');
+        });
+
+        // Read aloud TTS text action
+        speakBtn.addEventListener('click', () => {
+            const text = extractedTextTextarea.value.trim();
+            if (!text) return;
+
+            if (synth.speaking) {
+                synth.cancel();
+                return;
+            }
+
+            utteranceRef = new SpeechSynthesisUtterance(text);
+            
+            utteranceRef.onstart = () => {
+                speakIcon.setAttribute('data-lucide', 'volume-x');
+                speakText.textContent = "Stop";
+                speakBtn.classList.remove('bg-slate-100', 'hover:bg-slate-200', 'dark:bg-slate-800', 'dark:hover:bg-slate-700');
+                speakBtn.classList.add('bg-indigo-500', 'hover:bg-indigo-600', 'text-white', 'dark:bg-indigo-600', 'dark:hover:bg-indigo-700');
+                lucide.createIcons();
+            };
+
+            utteranceRef.onend = () => {
+                speakIcon.setAttribute('data-lucide', 'volume-2');
+                speakText.textContent = "Listen";
+                speakBtn.classList.add('bg-slate-100', 'hover:bg-slate-200', 'dark:bg-slate-800', 'dark:hover:bg-slate-700');
+                speakBtn.classList.remove('bg-indigo-500', 'hover:bg-indigo-600', 'text-white', 'dark:bg-indigo-600', 'dark:hover:bg-indigo-700');
+                lucide.createIcons();
+            };
+
+            utteranceRef.onerror = () => {
+                speakIcon.setAttribute('data-lucide', 'volume-2');
+                speakText.textContent = "Listen";
+                speakBtn.classList.add('bg-slate-100', 'hover:bg-slate-200', 'dark:bg-slate-800', 'dark:hover:bg-slate-700');
+                speakBtn.classList.remove('bg-indigo-500', 'hover:bg-indigo-600', 'text-white', 'dark:bg-indigo-600', 'dark:hover:bg-indigo-700');
+                lucide.createIcons();
+            };
+
+            synth.speak(utteranceRef);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,624 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="transition-colors duration-300">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionScript - Premium Image OCR Dashboard</title>
+    <!-- Tailwind v4 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Outfit Font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style type="text/tailwindcss">
+        @custom-variant dark (&:where(.dark, .dark *));
+    </style>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+        /* Custom scrollbar styling for results */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.4);
+        }
+        /* Vertical neon scan animation */
+        @keyframes scan {
+            0% {
+                top: 0%;
+            }
+            50% {
+                top: 100%;
+            }
+            100% {
+                top: 0%;
+            }
+        }
+        .scan-line {
+            animation: scan 2.5s linear infinite;
+        }
+    </style>
+    <script>
+        // Check local storage or system preferences for theme
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+    <!-- Top glassmorphic Navbar -->
+    <nav class="sticky top-0 z-40 w-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-gradient-to-tr from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/30">
+                        <i data-lucide="scan-line" class="w-6 h-6 text-white animate-pulse"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xl font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">VisionScript</span>
+                        <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 tracking-wider uppercase">OCR Workspace</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="flex items-center space-x-4">
+                   
+                    
+                    
+
+                    <!-- Theme Toggle -->
+                    <button id="themeToggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all active:scale-95" title="Toggle theme">
+                        <i id="themeIconSun" data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                        <i id="themeIconMoon" data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace Layout -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Welcome Hero Section -->
+        <div class="text-center max-w-2xl mx-auto mb-10">
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                Turn Images into <span class="bg-gradient-to-r from-indigo-500 to-violet-600 bg-clip-text text-transparent">Editable Text</span> instantly
+            </h1>
+            <p class="mt-3 text-base sm:text-lg text-slate-500 dark:text-slate-400">
+                A high-precision optical character recognition engine. Upload high-res images to extract details, copy contents, or download formatted TXT.
+            </p>
+        </div>
+
+        <!-- Dashboard Workspace Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            
+            <!-- Left Pane: File Upload and Image Preview (5 Cols) -->
+            <div class="lg:col-span-5 flex flex-col">
+                <div class="bg-white dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-xl p-6 flex flex-col h-full space-y-6">
+                    
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-4">
+                        <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="image" class="w-5 h-5 text-indigo-500"></i>
+                            Image Input
+                        </h2>
+                    </div>
+
+                    <!-- Django Form container -->
+                    <form id="ocrForm" method="post" enctype="multipart/form-data" class="flex flex-col flex-grow space-y-6">
+                        {% csrf_token %}
+                        
+                        <!-- Hidden Django File Field -->
+                        <div class="hidden">
+                            {{ form.image }}
+                        </div>
+
+                        <!-- Custom Drag & Drop Dropzone -->
+                        <div id="dropzone" class="relative group flex-grow flex flex-col items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 rounded-2xl p-6 cursor-pointer bg-slate-50/50 dark:bg-slate-950/20 hover:bg-indigo-50/10 dark:hover:bg-indigo-950/10 transition-all duration-300 min-h-[300px]">
+                            
+                            <!-- Prompt state -->
+                            <div id="dropzonePrompt" class="flex flex-col items-center justify-center text-center space-y-4 py-8">
+                                <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-md border border-slate-100 dark:border-slate-700/50 group-hover:scale-110 transition-transform duration-300">
+                                    <i data-lucide="upload-cloud" class="w-8 h-8 text-indigo-500"></i>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Drag & drop your image here</p>
+                                    <p class="text-xs text-slate-400 dark:text-slate-500">Supports PNG, JPG, JPEG, WEBP</p>
+                                </div>
+                                <button type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-500/20 active:scale-95 transition-all">
+                                    Browse Files
+                                </button>
+                            </div>
+
+                            <!-- Preview state (Hidden by default) -->
+                            <div id="previewContainer" class="hidden relative w-full h-full flex flex-col items-center justify-center rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-2">
+                                <img id="previewImage" src="" alt="OCR Target Preview" class="max-h-[350px] object-contain rounded shadow-sm transition-transform duration-300" />
+                                
+                                <!-- Neon Scanline Overlay -->
+                                <div id="scanline" class="hidden absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent shadow-[0_0_15px_3px_rgba(99,102,241,0.8)] scan-line pointer-events-none"></div>
+
+                                <!-- Change File Button Overlay -->
+                                <button type="button" id="changeImageBtn" class="absolute bottom-4 bg-slate-900/80 hover:bg-slate-900 backdrop-blur text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 shadow-md">
+                                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                                    Change Image
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Action Submit Button -->
+                        <button type="submit" id="submitBtn" disabled class="w-full py-4 px-6 inline-flex justify-center items-center gap-2 rounded-xl font-bold bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-600 cursor-not-allowed transition-all duration-300 shadow-md">
+                            
+                            <span id="btnText">Select an Image</span>
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+
+            <!-- Right Pane: Extracted Text and Controls (7 Cols) -->
+            <div class="lg:col-span-7 flex flex-col">
+                <div class="bg-white dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-xl p-6 flex flex-col h-full min-h-[450px]">
+                    
+                    <!-- Pane Header with counters -->
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-4 mb-4">
+                        <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-5 h-5 text-violet-500"></i>
+                            Extracted Workspace
+                        </h2>
+                        
+                        <div class="flex items-center space-x-3 text-xs font-medium text-slate-400 dark:text-slate-500">
+                            <span>Words: <strong id="wordCount" class="text-slate-700 dark:text-slate-300">0</strong></span>
+                            <span class="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full"></span>
+                            <span>Chars: <strong id="charCount" class="text-slate-700 dark:text-slate-300">0</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Text Area / Empty State wrapper -->
+                    <div class="relative flex-grow flex flex-col mb-6 min-h-[250px]">
+                        
+                        <!-- Empty State Prompt -->
+                        <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 space-y-4 bg-slate-50/50 dark:bg-slate-950/20 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-xl transition-all duration-300">
+                            <div class="p-4 bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 rounded-full">
+                                <i data-lucide="text-cursor-input" class="w-8 h-8"></i>
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">Workspace is empty</p>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 max-w-xs">Upload an image on the left and click "Get Text" to view extracted transcription here.</p>
+                            </div>
+                        </div>
+
+                        <!-- Textarea Editor -->
+                        <textarea id="extractedText" placeholder="Extracted OCR text will appear here..." class="w-full flex-grow p-4 bg-slate-50/30 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/80 resize-none font-sans text-sm sm:text-base leading-relaxed transition-all hidden opacity-0 transition-opacity duration-500"></textarea>
+                    </div>
+
+                    <!-- Workspace Action Toolbar -->
+                    <div id="actionToolbar" class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800/60 mt-auto hidden opacity-0 transition-all duration-300">
+                        <div class="flex flex-wrap gap-2">
+                            <!-- Copy Button -->
+                            <button id="copyBtn" class="relative group px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-2 active:scale-95 transition-all" title="Copy text">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                                <span>Copy</span>
+                                
+                                <!-- Clipboard tooltip -->
+                                <span id="copyTooltip" class="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-slate-900 text-white rounded text-[10px] font-bold opacity-0 transition-opacity duration-300 pointer-events-none whitespace-nowrap shadow-md">Copied!</span>
+                            </button>
+
+                            <!-- Download Button -->
+                            <button id="downloadBtn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-2 active:scale-95 transition-all" title="Download as text file">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                <span>Download</span>
+                            </button>
+
+                            <!-- Speak Button -->
+                            <button id="speakBtn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-2 active:scale-95 transition-all" title="Speak text aloud">
+                                <i id="speakIcon" data-lucide="volume-2" class="w-4 h-4"></i>
+                                <span id="speakText">Listen</span>
+                            </button>
+                        </div>
+
+                        <!-- Reset Workspace Button -->
+                        <button id="clearBtn" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold flex items-center gap-2 active:scale-95 transition-all" title="Reset everything">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            <span>Clear Workspace</span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Global Success/Error Toast notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border backdrop-blur">
+        <i id="toastIcon" data-lucide="info" class="w-5 h-5"></i>
+        <span id="toastMessage" class="text-sm font-semibold"></span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-8 bg-white dark:bg-slate-950 border-t border-slate-200/50 dark:border-slate-800/40 text-center transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 text-xs sm:text-sm text-slate-400 dark:text-slate-500 space-y-2">
+            <p class="font-bold flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-400">
+                <i data-lucide="shield-check" class="w-4 h-4 text-indigo-500"></i>
+                VisionScript OCR System
+            </p>
+            <p>© 2026 VisionScript. Core OCR is driven by Tesseract.</p>
+        </div>
+    </footer>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+
+    <!-- Application Script -->
+    <script>
+        // DOM Elements
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('themeIconSun');
+        const moonIcon = document.getElementById('themeIconMoon');
+
+        const ocrForm = document.getElementById('ocrForm');
+        const djangoFileInput = document.querySelector('input[type="file"]');
+        const dropzone = document.getElementById('dropzone');
+        const dropzonePrompt = document.getElementById('dropzonePrompt');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const changeImageBtn = document.getElementById('changeImageBtn');
+        const scanline = document.getElementById('scanline');
+        
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnIcon = document.getElementById('btnIcon');
+
+        const emptyState = document.getElementById('emptyState');
+        const extractedTextTextarea = document.getElementById('extractedText');
+        const actionToolbar = document.getElementById('actionToolbar');
+        
+        const wordCountSpan = document.getElementById('wordCount');
+        const charCountSpan = document.getElementById('charCount');
+        
+        const copyBtn = document.getElementById('copyBtn');
+        const copyTooltip = document.getElementById('copyTooltip');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const speakBtn = document.getElementById('speakBtn');
+        const speakIcon = document.getElementById('speakIcon');
+        const speakText = document.getElementById('speakText');
+        const clearBtn = document.getElementById('clearBtn');
+        
+        const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastMessage = document.getElementById('toastMessage');
+
+        // Speech Synth active reference
+        let synth = window.speechSynthesis;
+        let utteranceRef = null;
+
+        // Theme Toggle Handler
+        themeToggleBtn.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        });
+
+        // Toast notifications utility
+        function showToast(message, type = 'success') {
+            toastMessage.textContent = message;
+            
+            // Apply theme classes based on type
+            toast.className = 'fixed bottom-5 right-5 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border backdrop-blur ';
+            
+            if (type === 'success') {
+                toast.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-600', 'dark:text-emerald-400');
+                toastIcon.setAttribute('data-lucide', 'check-circle');
+            } else {
+                toast.classList.add('bg-rose-500/10', 'border-rose-500/30', 'text-rose-600', 'dark:text-rose-400');
+                toastIcon.setAttribute('data-lucide', 'alert-triangle');
+            }
+            
+            lucide.createIcons();
+
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // Dropzone & File Selector bindings
+        dropzone.addEventListener('click', (e) => {
+            // Do not trigger browse file if clicked on "Change Image" button specifically
+            if (e.target.closest('#changeImageBtn')) return;
+            djangoFileInput.click();
+        });
+
+        // Drag events styling helper
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('border-slate-300', 'dark:border-slate-800');
+                dropzone.classList.add('border-indigo-500', 'bg-indigo-50/20', 'dark:bg-indigo-950/20');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('border-indigo-500', 'bg-indigo-50/20', 'dark:bg-indigo-950/20');
+                dropzone.classList.add('border-slate-300', 'dark:border-slate-800');
+            }, false);
+        });
+
+        // Drop file drop event handler
+        dropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                djangoFileInput.files = files;
+                handleFileSelection(files[0]);
+            }
+        });
+
+        // Native file input change handler
+        djangoFileInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files.length > 0) {
+                handleFileSelection(files[0]);
+            }
+        });
+
+        // Trigger change file trigger
+        changeImageBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Avoid triggering dropzone container click
+            djangoFileInput.click();
+        });
+
+        // File selection rendering & button state changes
+        function handleFileSelection(file) {
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select a valid image file (PNG, JPG, etc).', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                
+                // Switch states
+                dropzonePrompt.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+                
+                // Update Button State
+                submitBtn.disabled = false;
+                submitBtn.className = "w-full py-4 px-6 inline-flex justify-center items-center gap-2 rounded-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 active:scale-[0.98] transition-all cursor-pointer";
+                btnText.textContent = "Convert to Text";
+                btnIcon.setAttribute('data-lucide', 'zap');
+                lucide.createIcons();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Live stats counter update
+        function updateTextStats() {
+            const text = extractedTextTextarea.value.trim();
+            const charCount = text.length;
+            const wordCount = text === '' ? 0 : text.split(/\s+/).length;
+            
+            charCountSpan.textContent = charCount;
+            wordCountSpan.textContent = wordCount;
+        }
+
+        extractedTextTextarea.addEventListener('input', updateTextStats);
+
+        // Submit form / perform AJAX OCR
+        ocrForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Update UI to running state
+            submitBtn.disabled = true;
+            submitBtn.className = "w-full py-4 px-6 inline-flex justify-center items-center gap-2 rounded-xl font-bold bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed transition-all duration-300";
+            btnText.textContent = "Extracting OCR text...";
+            btnIcon.setAttribute('data-lucide', 'loader');
+            btnIcon.classList.add('animate-spin');
+            
+            // Show scanning line overlay
+            scanline.classList.remove('hidden');
+
+            lucide.createIcons();
+
+            // Prepare Data
+            const formData = new FormData(ocrForm);
+            
+            try {
+                const response = await fetch('', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Server responded with an error status: ' + response.status);
+                }
+
+                const data = await response.json();
+                
+                if (data.extracted_text !== undefined) {
+                    // Update workspace
+                    extractedTextTextarea.value = data.extracted_text;
+                    updateTextStats();
+
+                    // Switch panel views with visual animation
+                    emptyState.classList.add('hidden');
+                    
+                    extractedTextTextarea.classList.remove('hidden');
+                    setTimeout(() => {
+                        extractedTextTextarea.classList.remove('opacity-0');
+                    }, 50);
+
+                    actionToolbar.classList.remove('hidden');
+                    setTimeout(() => {
+                        actionToolbar.classList.remove('opacity-0');
+                    }, 50);
+
+                    showToast('Text extracted successfully!');
+                } else {
+                    throw new Error(data.error || 'Failed to retrieve OCR text');
+                }
+
+            } catch (err) {
+                console.error(err);
+                showToast(err.message || 'An error occurred during text extraction.', 'error');
+            } finally {
+                // Restore button state
+                submitBtn.disabled = false;
+                submitBtn.className = "w-full py-4 px-6 inline-flex justify-center items-center gap-2 rounded-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/25 active:scale-[0.98] transition-all cursor-pointer";
+                btnText.textContent = "Convert Again";
+                btnIcon.setAttribute('data-lucide', 'zap');
+                btnIcon.classList.remove('animate-spin');
+                
+                // Hide scanline overlay
+                scanline.classList.add('hidden');
+
+                lucide.createIcons();
+            }
+        });
+
+        // Copy button action
+        copyBtn.addEventListener('click', () => {
+            const text = extractedTextTextarea.value;
+            if (!text) return;
+
+            navigator.clipboard.writeText(text).then(() => {
+                // Show tooltip visual validation
+                copyTooltip.classList.remove('opacity-0');
+                copyTooltip.classList.add('opacity-100');
+                
+                setTimeout(() => {
+                    copyTooltip.classList.remove('opacity-100');
+                    copyTooltip.classList.add('opacity-0');
+                }, 1500);
+
+                showToast('Copied text to clipboard!');
+            }).catch(err => {
+                showToast('Failed to copy text: ' + err, 'error');
+            });
+        });
+
+        // Download action
+        downloadBtn.addEventListener('click', () => {
+            const text = extractedTextTextarea.value;
+            if (!text) return;
+
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `extracted-ocr-${Date.now()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Document downloaded successfully!');
+        });
+
+        // Read aloud TTS text action
+        speakBtn.addEventListener('click', () => {
+            const text = extractedTextTextarea.value.trim();
+            if (!text) return;
+
+            if (synth.speaking) {
+                synth.cancel();
+                // Speak ended state triggered automatically
+                return;
+            }
+
+            utteranceRef = new SpeechSynthesisUtterance(text);
+            
+            utteranceRef.onstart = () => {
+                speakIcon.setAttribute('data-lucide', 'volume-x');
+                speakText.textContent = "Stop";
+                speakBtn.classList.remove('bg-slate-100', 'hover:bg-slate-200', 'dark:bg-slate-800', 'dark:hover:bg-slate-700');
+                speakBtn.classList.add('bg-indigo-500', 'hover:bg-indigo-600', 'text-white', 'dark:bg-indigo-600', 'dark:hover:bg-indigo-700');
+                lucide.createIcons();
+            };
+
+            utteranceRef.onend = () => {
+                speakIcon.setAttribute('data-lucide', 'volume-2');
+                speakText.textContent = "Listen";
+                speakBtn.classList.add('bg-slate-100', 'hover:bg-slate-200', 'dark:bg-slate-800', 'dark:hover:bg-slate-700');
+                speakBtn.classList.remove('bg-indigo-500', 'hover:bg-indigo-600', 'text-white', 'dark:bg-indigo-600', 'dark:hover:bg-indigo-700');
+                lucide.createIcons();
+            };
+
+            utteranceRef.onerror = () => {
+                speakIcon.setAttribute('data-lucide', 'volume-2');
+                speakText.textContent = "Listen";
+                speakBtn.classList.add('bg-slate-100', 'hover:bg-slate-200', 'dark:bg-slate-800', 'dark:hover:bg-slate-700');
+                speakBtn.classList.remove('bg-indigo-500', 'hover:bg-indigo-600', 'text-white', 'dark:bg-indigo-600', 'dark:hover:bg-indigo-700');
+                lucide.createIcons();
+            };
+
+            synth.speak(utteranceRef);
+        });
+
+        // Reset workspace (Clear button)
+        clearBtn.addEventListener('click', () => {
+            // Cancel speaking if any
+            if (synth.speaking) {
+                synth.cancel();
+            }
+
+            // Clear inputs
+            djangoFileInput.value = '';
+            previewImage.src = '';
+            
+            // Restore dropzone state
+            previewContainer.classList.add('hidden');
+            dropzonePrompt.classList.remove('hidden');
+            
+            // Restore run button
+            submitBtn.disabled = true;
+            submitBtn.className = "w-full py-4 px-6 inline-flex justify-center items-center gap-2 rounded-xl font-bold bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-600 cursor-not-allowed transition-all duration-300 shadow-md";
+            btnText.textContent = "Select an Image";
+            btnIcon.setAttribute('data-lucide', 'zap');
+
+            // Restore output workspace
+            extractedTextTextarea.value = '';
+            updateTextStats();
+            
+            extractedTextTextarea.classList.add('opacity-0', 'hidden');
+            actionToolbar.classList.add('opacity-0', 'hidden');
+            emptyState.classList.remove('hidden');
+            
+            lucide.createIcons();
+            showToast('Workspace reset successfully.');
+        });
+    </script>
+</body>
+</html>
