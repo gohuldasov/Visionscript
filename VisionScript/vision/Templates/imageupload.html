@@ -68,9 +68,6 @@
             <div class="flex items-center justify-between h-16">
                 <!-- Logo -->
                 <div class="flex items-center space-x-3">
-                    <div class="p-2 bg-gradient-to-tr from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/30">
-                        <i data-lucide="scan-line" class="w-6 h-6 text-white animate-pulse"></i>
-                    </div>
                     <div class="flex flex-col">
                         <span class="text-xl font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">VisionScript</span>
                         <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 tracking-wider uppercase">OCR Workspace</span>
@@ -163,7 +160,6 @@
 
                         <!-- Action Submit Button -->
                         <button type="submit" id="submitBtn" disabled class="w-full py-4 px-6 inline-flex justify-center items-center gap-2 rounded-xl font-bold bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-600 cursor-not-allowed transition-all duration-300 shadow-md">
-                            <i id="btnIcon" data-lucide="image" class="w-5 h-5"></i>
                             <span id="btnText">Select an Image</span>
                         </button>
                     </form>
@@ -285,7 +281,6 @@
         
         const submitBtn = document.getElementById('submitBtn');
         const btnText = document.getElementById('btnText');
-        const btnIcon = document.getElementById('btnIcon');
 
         const emptyState = document.getElementById('emptyState');
         const extractedTextTextarea = document.getElementById('extractedText');
@@ -413,7 +408,6 @@
                 submitBtn.disabled = false;
                 submitBtn.className = "w-full py-4 px-6 inline-flex justify-center items-center gap-2 rounded-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 active:scale-[0.98] transition-all cursor-pointer";
                 btnText.textContent = "Convert to Text";
-                btnIcon.setAttribute('data-lucide', 'zap');
                 lucide.createIcons();
             };
             reader.readAsDataURL(file);
@@ -439,8 +433,6 @@
             submitBtn.disabled = true;
             submitBtn.className = "w-full py-4 px-6 inline-flex justify-center items-center gap-2 rounded-xl font-bold bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed transition-all duration-300";
             btnText.textContent = "Extracting OCR text...";
-            btnIcon.setAttribute('data-lucide', 'loader');
-            btnIcon.classList.add('animate-spin');
             
             // Show scanning line overlay
             scanline.classList.remove('hidden');
@@ -497,8 +489,6 @@
                 submitBtn.disabled = false;
                 submitBtn.className = "w-full py-4 px-6 inline-flex justify-center items-center gap-2 rounded-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/25 active:scale-[0.98] transition-all cursor-pointer";
                 btnText.textContent = "Convert Again";
-                btnIcon.setAttribute('data-lucide', 'zap');
-                btnIcon.classList.remove('animate-spin');
                 
                 // Hide scanline overlay
                 scanline.classList.add('hidden');
@@ -606,7 +596,6 @@
             submitBtn.disabled = true;
             submitBtn.className = "w-full py-4 px-6 inline-flex justify-center items-center gap-2 rounded-xl font-bold bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-600 cursor-not-allowed transition-all duration-300 shadow-md";
             btnText.textContent = "Select an Image";
-            btnIcon.setAttribute('data-lucide', 'zap');
 
             // Restore output workspace
             extractedTextTextarea.value = '';
